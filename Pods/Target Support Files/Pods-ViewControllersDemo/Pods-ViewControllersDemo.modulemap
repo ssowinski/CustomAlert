@@ -1,0 +1,6 @@
+framework module Pods_ViewControllersDemo {
+  umbrella header "Pods-ViewControllersDemo-umbrella.h"
+
+  export *
+  module * { export * }
+}
