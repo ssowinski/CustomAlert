@@ -20,6 +20,51 @@ enum SimpleAlertButtonAlignment {
     case Horizontal
 }
 
+class MyPresentationController : UIPresentationController {
+    override func frameOfPresentedViewInContainerView() -> CGRect {
+        return super.frameOfPresentedViewInContainerView()
+            .insetBy(dx: 10, dy: 10)
+    }
+    
+    override func presentationTransitionWillBegin() {
+        let con = self.containerView!
+        let shadow = UIView(frame:con.bounds)
+        shadow.backgroundColor = UIColor(white:0, alpha:0.4)
+        con.insertSubview(shadow, atIndex: 0)
+        shadow.autoresizingMask = [.FlexibleWidth, .FlexibleHeight]
+    }
+    
+    override func dismissalTransitionWillBegin() {
+        let con = self.containerView!
+        let shadow = con.subviews[0]
+        let tc = self.presentedViewController.transitionCoordinator()!
+        tc.animateAlongsideTransition({
+            _ in
+            shadow.alpha = 0
+            }, completion: nil)
+    }
+    
+//    override func presentedView() -> UIView? {
+//        let v = super.presentedView()!
+//        v.layer.cornerRadius = 6
+//        v.layer.masksToBounds = true
+//        return v
+//    }
+    
+    override func presentationTransitionDidEnd(completed: Bool) {
+        let vc = self.presentingViewController
+        let v = vc.view
+        v.tintAdjustmentMode = .Dimmed
+    }
+    
+    override func dismissalTransitionDidEnd(completed: Bool) {
+        let vc = self.presentingViewController
+        let v = vc.view
+        v.tintAdjustmentMode = .Automatic
+    }
+    
+}
+
 class SimpleAlertViewController: UIViewController, UIViewControllerTransitioningDelegate, UIViewControllerAnimatedTransitioning  {
     
     struct Const {
@@ -167,10 +212,11 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
         
         super.init(nibName: nil, bundle: nil)
         
-        
 //                self.modalTransitionStyle = .CoverVertical
         self.transitioningDelegate = self //UIViewControllerTransitioningDelegate need to create Custom Transition Animation
-        self.modalPresentationStyle = .OverCurrentContext
+
+        //        self.modalPresentationStyle = .OverCurrentContext
+        self.modalPresentationStyle = .Custom
         
     }
     
@@ -179,6 +225,18 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
     }
     
     //-------------- to Custom Transition Animation ----------------
+    
+    func presentationControllerForPresentedViewController(
+        presented: UIViewController,
+        presentingViewController presenting: UIViewController,
+                                 sourceViewController source: UIViewController)
+        -> UIPresentationController? {
+            let pc = MyPresentationController(
+                presentedViewController: presented,
+                presentingViewController: presenting)
+            return pc
+    }
+    
     
     // UIViewControllerTransitioningDelegate implementation
     func animationControllerForPresentedController(
@@ -223,8 +281,6 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
             
             // ... 
         }
-        
-        
     }
     
     //-------------- END to Custom Transition Animation ----------------
@@ -244,7 +300,7 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
         button2.addTarget(self, action: #selector(SimpleAlertViewController.button2Action(_:)), forControlEvents: UIControlEvents.TouchUpInside)
         
         view.addSubview(container)
-        view.addSubview(dismissButton)
+        container.addSubview(dismissButton)
         container.addSubview(titleLabel)
         container.addSubview(topImage)
         container.addSubview(mainTextLabel)
@@ -255,14 +311,15 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
         buttonContainer.addSubview(button2)
         
         container.snp_makeConstraints { (make) in
+//            make.edges.equalTo(view)
             make.center.equalTo(view)
             make.width.lessThanOrEqualTo(containerWidth)
             make.height.lessThanOrEqualTo(containerHeight)
         }
         
         dismissButton.snp_makeConstraints { (make) in
-            make.left.equalTo(container.snp_right)
-            make.bottom.equalTo(container.snp_top)
+            make.right.equalTo(container.snp_right)
+            make.top.equalTo(container.snp_top)
         }
         
         titleLabel.snp_makeConstraints { (make) -> Void in

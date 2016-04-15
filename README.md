@@ -1,6 +1,4 @@
-# View Controllers Demo
-
-*SnapKit* is a DSL to make Auto Layout easy http://snapkit.io
+# Alert View Controller with Custom Presented View Controller Transition
 
 ## Relationships between view controllers
 
@@ -169,21 +167,91 @@ func animateTransition(transitionContext: UIViewControllerContextTransitioning) 
     let vc2 = transitionContext.viewControllerForKey(UITransitionContextToViewControllerKey)
     let con = transitionContext.containerView()!
     let r2end = transitionContext.finalFrameForViewController(vc2!)
-    let v2 = transitionContext.viewForKey(UITransitionContextToViewKey)!
-    v2.frame = r2end
-    v2.transform = CGAffineTransformMakeScale(0.1, 0.1)
-    v2.alpha = 0
-    con.addSubview(v2)
-    UIView.animateWithDuration(0.4, animations: {
-        v2.alpha = 1
-        v2.transform = CGAffineTransformIdentity
-    }, completion: {
-    _ in
-    transitionContext.completeTransition(true)
-    })
+    let v1 = transitionContext.viewForKey(UITransitionContextFromViewKey)
+    let v2 = transitionContext.viewForKey(UITransitionContextToViewKey)
+    if let v2 = v2 { // presenting
+        v2.frame = r2end
+        v2.transform = CGAffineTransformMakeScale(0.1, 0.1)
+        v2.alpha = 0
+        con.addSubview(v2)
+        UIView.animateWithDuration(0.4, animations: {
+            v2.alpha = 1
+            v2.transform = CGAffineTransformIdentity
+        }, completion: {
+            _ in
+            transitionContext.completeTransition(true)
+        })
+    } else if let v1 = v1 { //dismissing
+
+    // ... 
+    }
 }
 ```
 
+## Custom presentation controller
+
+In init we set ```self.modalPresentationStyle = .Custom```
+
+Implement extra delegate method is called so that we can provide a custom presentation controller
+```
+func presentationControllerForPresentedViewController(
+    presented: UIViewController, presentingViewController presenting: UIViewController, sourceViewController source: UIViewController) -> UIPresentationController? {
+    let pc = MyPresentationController(
+    presentedViewController: presented,
+    presentingViewController: presenting)
+    return pc
+}
+
+```
+
+Everything else happens in our implementation of MyPresentationController. 
+
+```
+class MyPresentationController : UIPresentationController {
+    override func frameOfPresentedViewInContainerView() -> CGRect {
+        return super.frameOfPresentedViewInContainerView()
+            .insetBy(dx: 40, dy: 40)
+    }
+    
+    override func presentationTransitionWillBegin() {
+        let con = self.containerView!
+        let shadow = UIView(frame:con.bounds)
+        shadow.backgroundColor = UIColor(white:0, alpha:0.4)
+        con.insertSubview(shadow, atIndex: 0)
+        shadow.autoresizingMask = [.FlexibleWidth, .FlexibleHeight]
+    }
+    
+    override func dismissalTransitionWillBegin() {
+        let con = self.containerView!
+        let shadow = con.subviews[0]
+        let tc = self.presentedViewController.transitionCoordinator()!
+        tc.animateAlongsideTransition({
+            _ in
+            shadow.alpha = 0
+            }, completion: nil)
+    }
+    
+    override func presentedView() -> UIView? {
+        let v = super.presentedView()!
+        v.layer.cornerRadius = 6
+        v.layer.masksToBounds = true
+        return v
+    }
+    
+    override func presentationTransitionDidEnd(completed: Bool) {
+        let vc = self.presentingViewController
+        let v = vc.view
+        v.tintAdjustmentMode = .Dimmed
+    }
+    
+    override func dismissalTransitionDidEnd(completed: Bool) {
+        let vc = self.presentingViewController
+        let v = vc.view
+        v.tintAdjustmentMode = .Automatic
+    }
+    
+}
+```
 
 ## View Controller Lifecycle
 - Instantiated
