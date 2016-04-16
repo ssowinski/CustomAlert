@@ -139,6 +139,8 @@ The presented view controller’s view replaces only the first view controller�
 
 Instead of choosing a simple built-in modal presentation style and animation style, you can customize it.
 
+The work of customizing a presentation is distributed between two objects: the animation controller (or interaction controller) on the one hand, and the presentation con‐ troller on the other. The idea is that the animation controller should be responsible for only the animation, the movement of the presented view into its final position. The determination of that final position is the job of the presentation controller. The pre‐ sentation controller is also responsible for inserting any extra views, such as a dimming view, into the container view; Apple says that the animation controller animates the content, while the presentation controller animates the “chrome.” This distribution of responsibilities may require some extra effort on your part, but in fact it also simplifies considerably the task of customizing the animation itself.
+
 
 ### Customizing the animation
 
@@ -252,6 +254,9 @@ class MyPresentationController : UIPresentationController {
     
 }
 ```
+
+```frameOfPresentedViewInContainerView``` returns the final position of the presented view. The animation coordinator, if there is one, will obtain this frame through the transition context’s finalFrameForViewController: method and must cause the presented view to end up there (as you already know).
+
 
 ## View Controller Lifecycle
 - Instantiated

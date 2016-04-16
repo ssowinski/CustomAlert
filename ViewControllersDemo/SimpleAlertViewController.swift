@@ -9,65 +9,22 @@
 import UIKit
 import SnapKit
 
-//'weak' may only be applied to class and class-bound protocol types, not 'SimpleAlertDelegat'
+
 protocol SimpleAlertDelegate: class {
-    func alertButton1Action(data: AnyObject?)
-    func alertButton2Action(data: AnyObject?)
+    func alertButtonAction(data: AnyObject?, sender: UIButton?)
 }
+//to create week delegat properties in SimpleAlertViewController we have to mark our protocol as class - 'weak' may only be applied to class and class-bound protocol types, not 'SimpleAlertDelegat'
+
 
 enum SimpleAlertButtonAlignment {
     case Vertical //z gory na dół
     case Horizontal
 }
 
-class MyPresentationController : UIPresentationController {
-    override func frameOfPresentedViewInContainerView() -> CGRect {
-        return super.frameOfPresentedViewInContainerView()
-            .insetBy(dx: 10, dy: 10)
-    }
+class SimpleAlertViewController: UIViewController, UIViewControllerTransitioningDelegate {
     
-    override func presentationTransitionWillBegin() {
-        let con = self.containerView!
-        let shadow = UIView(frame:con.bounds)
-        shadow.backgroundColor = UIColor(white:0, alpha:0.4)
-        con.insertSubview(shadow, atIndex: 0)
-        shadow.autoresizingMask = [.FlexibleWidth, .FlexibleHeight]
-    }
-    
-    override func dismissalTransitionWillBegin() {
-        let con = self.containerView!
-        let shadow = con.subviews[0]
-        let tc = self.presentedViewController.transitionCoordinator()!
-        tc.animateAlongsideTransition({
-            _ in
-            shadow.alpha = 0
-            }, completion: nil)
-    }
-    
-//    override func presentedView() -> UIView? {
-//        let v = super.presentedView()!
-//        v.layer.cornerRadius = 6
-//        v.layer.masksToBounds = true
-//        return v
-//    }
-    
-    override func presentationTransitionDidEnd(completed: Bool) {
-        let vc = self.presentingViewController
-        let v = vc.view
-        v.tintAdjustmentMode = .Dimmed
-    }
-    
-    override func dismissalTransitionDidEnd(completed: Bool) {
-        let vc = self.presentingViewController
-        let v = vc.view
-        v.tintAdjustmentMode = .Automatic
-    }
-    
-}
-
-class SimpleAlertViewController: UIViewController, UIViewControllerTransitioningDelegate, UIViewControllerAnimatedTransitioning  {
-    
-    struct Const {
+    // MARK: - Const
+    private struct Const {
         static let DefaultContainerColor = UIColor(rgb: 0x238888)
         static let DefaultButtonColor = UIColor(rgb: 0x6dc8c9)
         static let DefaultButtonHighlightColor = UIColor(rgb: 0x5eb1b3)
@@ -83,33 +40,33 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
         static let Offset: CGFloat = 20
     }
     
+    // MARK: - Public properties
     weak var delegate : SimpleAlertDelegate?
-    var closeAction:(()->Void)! //or action
+    var closeAction:(()->Void)! //or action //TO DO
     
+    // MARK: - Private properties
     private let dismissButton: UIButton = UIButton()
     private let container: UIView = UIView()
     private let titleLabel: UILabel = UILabel()
     private let mainTextLabel: UILabel = UILabel()
     private let buttonContainer = UIView()
-    private let button1: UIButton = UIButton()
-    private let button2: UIButton = UIButton()
+    private var buttons: [UIButton] = []
     private let topImage: UIImageView = UIImageView()
     private let bottomImage: UIImageView = UIImageView()
     private let textField: UITextField = UITextField()
     
-    private let containerWidth: CGFloat
-    private let containerHeight: CGFloat
+    private let maxContainerWidth: CGFloat
+    private let maxContainerHeight: CGFloat
     
     private let buttonAlignment: SimpleAlertButtonAlignment
-    private let button1Height: CGFloat
-    private let button2Height: CGFloat
+    private let buttonHeight: CGFloat
     
     private let textFieldHeight: CGFloat
     
     
     // MARK: - Init
-    init(width: CGFloat,
-         height: CGFloat,
+    init(maxWidth: CGFloat,
+         maxHeight: CGFloat,
          containerColor: UIColor = Const.DefaultContainerColor,
          
          titleText: String,
@@ -124,8 +81,7 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
          mainTextAlignment: NSTextAlignment  = Const.DefaultTextAlignment,
          mainTextMinScaleFactor: CGFloat = Const.MinimumFontScaleFactor,
          
-         button1Text: String? = nil,
-         button2Text: String? = nil,
+         buttonsText: [String]? = nil,
          buttonColor: UIColor = Const.DefaultButtonColor,
          buttonHighlightColor: UIColor = Const.DefaultButtonHighlightColor,
          buttonBorderColor: UIColor = Const.DefaultButtonBorderColor,
@@ -141,8 +97,8 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
          textFieldHeight: CGFloat = Const.DefaultTextFieldHeight
         ){
         
-        containerWidth = width
-        containerHeight = height
+        maxContainerWidth = maxWidth
+        maxContainerHeight = maxHeight
         container.backgroundColor = containerColor
         
         titleLabel.text = titleText
@@ -166,26 +122,23 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
         //        mainTextLabel.backgroundColor = UIColor.blueColor() //usunąć
         
         self.buttonAlignment = buttonAlignment
-        let buttonColor = UIImage.withColor(buttonColor)
-        let buttonHighlightColor = UIImage.withColor(buttonHighlightColor)
         buttonContainer.backgroundColor = buttonBorderColor
         
-        if let txt = button1Text {
-            button1.setTitle(txt, forState: .Normal)
-            self.button1Height = buttonHeight
-            button1.setBackgroundImage(buttonColor, forState: .Normal)
-            button1.setBackgroundImage(buttonHighlightColor, forState: .Highlighted)
+        if let buttonsText = buttonsText {
+            self.buttonHeight = buttonHeight
+            let buttonColor = UIImage.withColor(buttonColor)
+            let buttonHighlightColor = UIImage.withColor(buttonHighlightColor)
+            
+            for (index, text) in buttonsText.enumerate() {
+                let button = UIButton()
+                button.tag = index
+                button.setTitle(text, forState: .Normal)
+                button.setBackgroundImage(buttonColor, forState: .Normal)
+                button.setBackgroundImage(buttonHighlightColor, forState: .Highlighted)
+                buttons.append(button)
+            }
         } else {
-            self.button1Height = 0
-        }
-        
-        if let txt = button2Text {
-            button2.setTitle(txt, forState: .Normal)
-            self.button2Height = buttonHeight
-            button2.setBackgroundImage(buttonColor, forState: .Normal)
-            button2.setBackgroundImage(buttonHighlightColor, forState: .Highlighted)
-        } else {
-            self.button2Height = 0
+            self.buttonHeight = 0
         }
         
         if let img = topImg {
@@ -212,10 +165,10 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
         
         super.init(nibName: nil, bundle: nil)
         
-//                self.modalTransitionStyle = .CoverVertical
+                self.modalTransitionStyle = .CoverVertical
         self.transitioningDelegate = self //UIViewControllerTransitioningDelegate need to create Custom Transition Animation
 
-        //        self.modalPresentationStyle = .OverCurrentContext
+//        self.modalPresentationStyle = .OverCurrentContext
         self.modalPresentationStyle = .Custom
         
     }
@@ -223,81 +176,31 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+
+    // MARK: - UIViewControllerTransitioningDelegate Implementation
     
-    //-------------- to Custom Transition Animation ----------------
-    
-    func presentationControllerForPresentedViewController(
-        presented: UIViewController,
-        presentingViewController presenting: UIViewController,
-                                 sourceViewController source: UIViewController)
-        -> UIPresentationController? {
-            let pc = MyPresentationController(
-                presentedViewController: presented,
-                presentingViewController: presenting)
-            return pc
+    func presentationControllerForPresentedViewController(presented: UIViewController, presentingViewController presenting: UIViewController, sourceViewController source: UIViewController) -> UIPresentationController? {
+        return CustomPresentationController(presentedViewController: presented, presentingViewController: presenting)
     }
     
-    
-    // UIViewControllerTransitioningDelegate implementation
-    func animationControllerForPresentedController(
-        presented: UIViewController,
-        presentingController presenting: UIViewController,
-                             sourceController source: UIViewController)
-        -> UIViewControllerAnimatedTransitioning? {
-            return self
-    }
+//    func animationControllerForPresentedController(presented: UIViewController, presentingController presenting: UIViewController, sourceController source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+//            return  CustomViewControllerAnimatedTransitioning()
+//    }
     
 //    func animationControllerForDismissedController(dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
 //        return self
 //    }
     
-    //UIViewControllerAnimatedTransitioning implementation
-    func transitionDuration(
-        transitionContext: UIViewControllerContextTransitioning?)
-        -> NSTimeInterval {
-            return 0.4
-    }
     
-    func animateTransition(
-        transitionContext: UIViewControllerContextTransitioning) {
-        let vc2 = transitionContext.viewControllerForKey(UITransitionContextToViewControllerKey)
-        let con = transitionContext.containerView()!
-        let r2end = transitionContext.finalFrameForViewController(vc2!)
-        let v1 = transitionContext.viewForKey(UITransitionContextFromViewKey)
-        let v2 = transitionContext.viewForKey(UITransitionContextToViewKey)
-        if let v2 = v2 { // presenting
-            v2.frame = r2end
-            v2.transform = CGAffineTransformMakeScale(0.1, 0.1)
-            v2.alpha = 0
-            con.addSubview(v2)
-            UIView.animateWithDuration(0.4, animations: {
-                v2.alpha = 1
-                v2.transform = CGAffineTransformIdentity
-                }, completion: {
-                    _ in
-                    transitionContext.completeTransition(true)
-            })
-        } else if let v1 = v1 { //dismissing
-            
-            // ... 
-        }
-    }
-    
-    //-------------- END to Custom Transition Animation ----------------
-    
+    // MARK: - ViewController Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         layoutUI()
         // Do any additional setup after loading the view.
     }
     
-    
     private func layoutUI() {
         dismissButton.addTarget(self, action: #selector(SimpleAlertViewController.dismissAction(_:)), forControlEvents: UIControlEvents.TouchUpInside)
-        
-        button1.addTarget(self, action: #selector(SimpleAlertViewController.button1Action(_:)), forControlEvents: UIControlEvents.TouchUpInside)
-        
-        button2.addTarget(self, action: #selector(SimpleAlertViewController.button2Action(_:)), forControlEvents: UIControlEvents.TouchUpInside)
         
         view.addSubview(container)
         container.addSubview(dismissButton)
@@ -307,14 +210,12 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
         container.addSubview(bottomImage)
         container.addSubview(textField)
         container.addSubview(buttonContainer)
-        buttonContainer.addSubview(button1)
-        buttonContainer.addSubview(button2)
         
         container.snp_makeConstraints { (make) in
 //            make.edges.equalTo(view)
             make.center.equalTo(view)
-            make.width.lessThanOrEqualTo(containerWidth)
-            make.height.lessThanOrEqualTo(containerHeight)
+            make.width.lessThanOrEqualTo(maxContainerWidth < view.bounds.width ? maxContainerWidth : view.bounds.width)
+            make.height.lessThanOrEqualTo(maxContainerHeight < view.bounds.height ? maxContainerHeight : view.bounds.height)
         }
         
         dismissButton.snp_makeConstraints { (make) in
@@ -355,66 +256,52 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
             make.left.equalTo(container)
             make.right.equalTo(container)
             make.bottom.equalTo(container)
-            make.height.equalTo(button1Height > button2Height ? button1Height + 1 : button2Height + 1)
+            make.height.equalTo(buttonHeight > 0 ? buttonHeight + 1 : 0)
+        }
+       
+        for (index, button) in buttons.enumerate() {
+            buttonContainer.addSubview(button)
+            button.addTarget(self, action: #selector(SimpleAlertViewController.buttonAction(_:)), forControlEvents: UIControlEvents.TouchUpInside)
+            
+            button.snp_makeConstraints(closure: { (make) in
+                make.height.equalTo(buttonHeight)
+                make.bottom.equalTo(buttonContainer)
+            })
+            
+            if index > 0 {
+                let buttonSeparator = UIView()
+                buttonContainer.addSubview(buttonSeparator)
+                
+                buttonSeparator.snp_makeConstraints(closure: { (make) in
+                    make.width.equalTo(1)
+                    make.height.equalTo(buttonContainer)
+                    make.left.equalTo(buttons[index-1].snp_right)
+                })
+                
+                button.snp_makeConstraints(closure: { (make) in
+                    make.left.equalTo(buttonSeparator.snp_right)
+                    make.width.equalTo(buttons[index-1].snp_width)
+                })
+            }
         }
         
-        let buttonSeparator = UIView()
-        buttonContainer.addSubview(buttonSeparator)
-        buttonSeparator.snp_makeConstraints { (make) in
-            make.left.equalTo(button1.snp_right)
-            make.right.equalTo(button2.snp_left)
-            make.width.greaterThanOrEqualTo(1)
-        }
-        
-        button1.snp_makeConstraints(closure: { (make) in
+        buttons.first?.snp_makeConstraints(closure: { (make) in
             make.left.equalTo(buttonContainer)
-            //            make.right.equalTo(buttonContainer.snp_centerX).offset(-0.5)
-            make.bottom.equalTo(buttonContainer)
-            make.height.equalTo(button1Height)
-            if button1Height == 0 {
-                make.width.equalTo(0)
-            }
         })
         
-        button2.snp_makeConstraints(closure: { (make) in
-            make.right.bottom.equalTo(buttonContainer)
-            //            make.left.equalTo(buttonContainer.snp_centerX).offset(0.5)
-            make.height.equalTo(button2Height)
-            if button2Height == 0 {
-                make.width.equalTo(0)
-            }
+        buttons.last?.snp_makeConstraints(closure: { (make) in
+            make.right.equalTo(buttonContainer)
         })
-        
-        //        button1.snp_makeConstraints(closure: { (make) in
-        //            make.left.equalTo(container)
-        //            make.right.equalTo(container)
-        //            make.bottom.equalTo(button2.snp_top)
-        //            make.height.equalTo(button1Height)
-        //        })
-        //
-        //        button2.snp_makeConstraints(closure: { (make) in
-        //            make.left.equalTo(container)
-        //            make.right.bottom.equalTo(container)
-        //            make.height.equalTo(button2Height)
-        //        })
-        
     }
     
+    
+    // MARK: - Buttons action
     func dismissAction(sender: UIButton) {
         presentingViewController?.dismissViewControllerAnimated(true, completion: nil)
     }
     
-    func button1Action(sender: UIButton) {
-        delegate?.alertButton1Action(nil)
-    }
-    
-    func button2Action(sender: UIButton) {
-        delegate?.alertButton2Action(nil)
-    }
-    
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
+    func buttonAction(sender: UIButton) {
+        delegate?.alertButtonAction(nil, sender: sender)
     }
     
     /*
@@ -427,12 +314,94 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
      }
      */
     
+}
+
+
+// MARK: - UIViewControllerAnimatedTransitioning Implementation
+//You have to make your class inherit from NSObject to conform to the NSObjectProtocol (UIViewControllerAnimatedTransitioning Inherits From NSObjectProtocol)
+class CustomViewControllerAnimatedTransitioning : NSObject, UIViewControllerAnimatedTransitioning {
+    //UIViewControllerAnimatedTransitioning implementation
+    func transitionDuration(
+        transitionContext: UIViewControllerContextTransitioning?)
+        -> NSTimeInterval {
+            return 0.4
+    }
     
-    // MARK: - UIViewControllerTransitioningDelegate Implementation
+    func animateTransition(
+        transitionContext: UIViewControllerContextTransitioning) {
+        let vc2 = transitionContext.viewControllerForKey(UITransitionContextToViewControllerKey)
+        let con = transitionContext.containerView()!
+        let r2end = transitionContext.finalFrameForViewController(vc2!)
+        let v1 = transitionContext.viewForKey(UITransitionContextFromViewKey)
+        let v2 = transitionContext.viewForKey(UITransitionContextToViewKey)
+        
+        if let v2 = v2 { // presenting
+            v2.frame = r2end
+            v2.transform = CGAffineTransformMakeScale(0.1, 0.1)
+            v2.alpha = 0
+            con.addSubview(v2)
+            UIView.animateWithDuration(0.4, animations: {
+                v2.alpha = 1
+                v2.transform = CGAffineTransformIdentity
+                }, completion: {
+                    _ in
+                    transitionContext.completeTransition(true)
+            })
+        } else if let v1 = v1 { //dismissing
+            
+            // ...
+        }
+    }
+}
+
+// MARK: - UIPresentationController Implementation
+class CustomPresentationController : UIPresentationController {
     
+//    override func frameOfPresentedViewInContainerView() -> CGRect {
+//        return super.frameOfPresentedViewInContainerView()
+//            .insetBy(dx: 10, dy: 10)
+//    }
+    
+    override func presentationTransitionWillBegin() {
+        let con = self.containerView!
+        let shadow = UIView(frame:con.bounds)
+        shadow.backgroundColor = UIColor(white:0, alpha:0.4)
+        con.insertSubview(shadow, atIndex: 0)
+        shadow.autoresizingMask = [.FlexibleWidth, .FlexibleHeight]
+    }
+    
+    override func dismissalTransitionWillBegin() {
+        let con = self.containerView!
+        let shadow = con.subviews[0]
+        let tc = self.presentedViewController.transitionCoordinator()!
+        tc.animateAlongsideTransition({
+            _ in
+            shadow.alpha = 0
+            }, completion: nil)
+    }
+    
+    //    override func presentedView() -> UIView? {
+    //        let v = super.presentedView()!
+    //        v.layer.cornerRadius = 6
+    //        v.layer.masksToBounds = true
+    //        return v
+    //    }
+    
+    override func presentationTransitionDidEnd(completed: Bool) {
+        let vc = self.presentingViewController
+        let v = vc.view
+        v.tintAdjustmentMode = .Dimmed
+    }
+    
+    override func dismissalTransitionDidEnd(completed: Bool) {
+        let vc = self.presentingViewController
+        let v = vc.view
+        v.tintAdjustmentMode = .Automatic
+    }
     
 }
 
+// MARK: - Extension
 // See: http://stackoverflow.com/questions/20300766/how-to-change-the-highlighted-color-of-a-uibutton
 extension UIImage {
     class func withColor(color: UIColor) -> UIImage {

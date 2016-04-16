@@ -28,7 +28,7 @@ class MainViewController: UIViewController, UITableViewDelegate, UITableViewData
         
     }
     
-    private let cellLabels = ["no buttons", "one button", "two buttons", "two buttons & img", "two buttons & two imgs", "all"]
+    private let cellLabels = ["no buttons", "one button", "two buttons", "three buttons", "two buttons & img", "two buttons & two imgs", "buttons & imgs & textFields"]
     
     @IBOutlet weak var tableView: UITableView! {
         didSet{
@@ -40,13 +40,8 @@ class MainViewController: UIViewController, UITableViewDelegate, UITableViewData
     }
     
     //MARK - SimpleAlertDelegate Implementation
-    func alertButton1Action(data: AnyObject?) {
-        print("alertAcceptAction")
-        dismissViewControllerAnimated(true, completion: nil)
-    }
-    
-    func alertButton2Action(data: AnyObject?){
-        print("alertCancelAction")
+    func alertButtonAction(data: AnyObject?, sender: UIButton?) {
+        print("Przycisk nr \((sender?.tag)! + 1)")
         dismissViewControllerAnimated(true, completion: nil)
     }
     
@@ -64,19 +59,33 @@ class MainViewController: UIViewController, UITableViewDelegate, UITableViewData
     }
     
     func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
+        
+        let alert : SimpleAlertViewController?
+        
         switch indexPath.row {
-        case 2:
-            let alert = SimpleAlertViewController(width: Const.Width, height: Const.Height, titleText: Const.TitleText, mainText: Const.MainText, button1Text: Const.Button1Txt)
-            alert.delegate = self
-            presentViewController(alert, animated:true, completion:nil)
+        case 1: //one button
+            alert = SimpleAlertViewController(maxWidth: Const.Width, maxHeight: Const.Height, titleText: Const.TitleText, mainText: Const.MainText, buttonsText: [Const.Button1Txt])
+        
+        case 2: //two buttons
+            alert = SimpleAlertViewController(maxWidth: Const.Width, maxHeight: Const.Height, titleText: Const.TitleText, mainText: Const.MainText, buttonsText: [Const.Button1Txt, Const.Button2Txt])
             
-        case 5:
-            let alert = SimpleAlertViewController(width: Const.Width, height: Const.Height, titleText: Const.TitleText, mainText: Const.MainText, button1Text: Const.Button1Txt, button2Text: Const.Button2Txt, topImg: Const.Img1, bootomImg: Const.Img2, textFieldPlaceholder: Const.TextFieldPlaceholder)
-            alert.delegate = self
-            presentViewController(alert, animated:true, completion:nil)
+        case 3: //three buttons
+            alert = SimpleAlertViewController(maxWidth: Const.Width, maxHeight: Const.Height, titleText: Const.TitleText, mainText: Const.MainText, buttonsText: [Const.Button1Txt, Const.Button2Txt, Const.Button1Txt])
+    
+        case 4: //two buttons & img
+            alert = SimpleAlertViewController(maxWidth: Const.Width, maxHeight: Const.Height, titleText: Const.TitleText, mainText: Const.MainText, buttonsText: [Const.Button1Txt, Const.Button2Txt], topImg: Const.Img2)
             
-        default:
-            let alert = SimpleAlertViewController(width: Const.Width, height: Const.Height, titleText: Const.TitleText, mainText: Const.MainText)
+        case 5: //two buttons & two imgs
+            alert = SimpleAlertViewController(maxWidth: Const.Width, maxHeight: Const.Height, titleText: Const.TitleText, mainText: Const.MainText, buttonsText: [Const.Button1Txt, Const.Button2Txt], topImg: Const.Img1, bootomImg: Const.Img2)
+            
+        case 6: //two buttons & two imgs & textField
+            alert = SimpleAlertViewController(maxWidth: Const.Width, maxHeight: Const.Height, titleText: Const.TitleText, mainText: Const.MainText, buttonsText: [Const.Button1Txt, Const.Button2Txt], topImg: Const.Img1, bootomImg: Const.Img2, textFieldPlaceholder: Const.TextFieldPlaceholder)
+            
+        default: //only title and text
+            alert = SimpleAlertViewController(maxWidth: Const.Width, maxHeight: Const.Height, titleText: Const.TitleText, mainText: Const.MainText)
+        }
+        
+        if let alert = alert {
             alert.delegate = self
             presentViewController(alert, animated:true, completion:nil)
         }
