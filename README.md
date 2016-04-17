@@ -57,7 +57,7 @@ If the nib name passed to init(nibName:bundle:) is nil, a nib will be sought aut
 View controller supplies two properties ```topLayoutGuide``` and ```bottomLayoutGuide```, they help us manage view size having regard bars at the top and bottom of the screen.
 
 A UIViewController receives events that notify it of pending view size changes. 
-```
+```sh
 willTransitionToTraitCollection:withTransitionCoordinator:
 viewWillTransitionToSize:withTransitionCoordinator:
 updateViewConstraints
@@ -76,13 +76,13 @@ The two key methods for presenting and dismissing a view are:
 
 ## Communication With a Presented View Controller
 We used designated initializer to pass all data into presented VC during create new instance of presented controller.
-```
+```sh
 let alert = SimpleAlertViewController(width: 250, height: 350, titleText: "Uwaga!", mainText: "Podaj imię")
 presentViewController(alert, animated:true, completion:nil)
 ```
 
 To get data from presented VC we use delegate pattern. We can call delegate method on viewWillDisappear or button action
-```
+```sh
 override func viewWillDisappear(animated: Bool) {
     super.viewWillDisappear(animated)
     if self.isBeingDismissed() {
@@ -93,7 +93,7 @@ override func viewWillDisappear(animated: Bool) {
 
 ## Presented View Animation
 You can chose built-in animation style setting presented VC ```modalTransitionStyle``` property.
-```
+```sh
 .CoverVertical //default
 .FlipHorizontal
 .CrossDissolve
@@ -102,7 +102,7 @@ You can chose built-in animation style setting presented VC ```modalTransitionSt
 
 ## Presentation Styles
 To choose a presentation style, set the presented view controller’s ```modalPresentationStyle``` property.
-```
+```sh
 .FullScreen //default
 .OverFullScreen
 .PageSheet
@@ -116,7 +116,7 @@ When the presented view controller’s ```modalPresentationStyle``` is ```.Curre
 for example, we have UITabBarController with two controllers FirstViewController and SecendViewController. 
 Wehen we call
 
-```
+```sh
 let modalVC = ModalViewController()
 self.presentViewController(modalVC, animated: true, completion: nil)
 ```
@@ -125,7 +125,7 @@ The presented view controller’s (ModalViewController) view occupies the entire
 
 but when we call
 
-```
+```sh
 let modalVC = ModalViewController()
 self.definesPresentationContext = true // *
 modalVC.modalPresentationStyle = .CurrentContext // *
@@ -148,7 +148,7 @@ The work of customizing a presentation is distributed between two objects: the a
 In init instead ```self.modalTransitionStyle = .CoverVertical``` we set ```self.transitioningDelegate = self```
 Our class has to confirm UIViewControllerTransitioningDelegate, we have to implement ```animationControllerForPresentedController```. When the transition begins, the delegate will be asked for an animation controller
 
-```
+```sh
 func animationControllerForPresentedController(
     presented: UIViewController,
     presentingController presenting: UIViewController,
@@ -160,7 +160,7 @@ return self
 when we return self we have to confirm UIViewControllerAnimatedTransitioning and implement two methods. (There is no particular reason why the animation controller should be self; it can be 
 any object — even a dedicated lightweight object instantiated just to govern this transition.)
 
-``` 
+```sh
 func transitionDuration(transitionContext: UIViewControllerContextTransitioning?) -> NSTimeInterval {
     return 0.4
 }
@@ -190,12 +190,14 @@ func animateTransition(transitionContext: UIViewControllerContextTransitioning) 
 }
 ```
 
+I create a dedicate class ```class CustomViewControllerAnimatedTransitioning : NSObject, UIViewControllerAnimatedTransitioning```
+
 ## Custom presentation controller
 
 In init we set ```self.modalPresentationStyle = .Custom```
 
 Implement extra delegate method is called so that we can provide a custom presentation controller
-```
+```sh
 func presentationControllerForPresentedViewController(
     presented: UIViewController, presentingViewController presenting: UIViewController, sourceViewController source: UIViewController) -> UIPresentationController? {
     let pc = MyPresentationController(
@@ -208,7 +210,7 @@ func presentationControllerForPresentedViewController(
 
 Everything else happens in our implementation of MyPresentationController. 
 
-```
+```sh
 class MyPresentationController : UIPresentationController {
     override func frameOfPresentedViewInContainerView() -> CGRect {
         return super.frameOfPresentedViewInContainerView()
@@ -271,82 +273,3 @@ class MyPresentationController : UIPresentationController {
 - If memory gets low, you might get **didReceiveMemoryWarning**
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-## Delegation Pattern
-A very important use of protocols, implement “blind communication” between a View and its Controller. 
-
-1.Create a delegation protocol.
-Defines what the View (CardViewContainer) wants the Controller (WordsListViewController) to take care of.
-
-```sh
-protocol CardViewContainerDelegate: class{
-    func cardsNumber(cardViewContainer : CardViewContainer) -> Int
-    func cardForIndex(cardViewContainer : CardViewContainer, index: Int) -> UIView
-}
-```
-
-2.Create a delegate property in the View (CardViewContainer) whose type is that delegation protocol
-
-```sh
-weak var delegat : CardViewContainerDelegate? {
-    didSet {
-        showCard(currentIndex, swipeDir: .Left)
-    }
-}
-```
-We have to be a little bit careful about delegat because of memory management. When View points Controler and Controler pointer to the View, we create a meory cycle. We used weak to prevent this.
-
-3.Use the delegate property in the View (CardViewContainer) to get/do things it can’t own or control.
-We use delegate in few places, e.g. to get card view in showCard.
-
-```sh
-private func showCard(index: Int, swipeDir: SwipeDirection) {
-    guard let card = delegat?.cardForIndex(self, index: index) else { return }
-    addSubview(card)
-    .
-    .
-    .
-}
-```
-
-4.Controller (WordsListViewController) declares and implements the protocol
-
-```sh
-class WordsListViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, ButtonShowMoreDelegate, CardViewContainerDelegate
-{
-    .
-    .
-    .
-    // MARK: -CardViewContainerDelegate Implemantation
-    func cardsNumber(cardViewContainer: CardViewContainer) -> Int {
-        return verbsModel.countVerbs()
-    }
-
-    func cardForIndex(cardViewContainer: CardViewContainer, index: Int) -> UIView {
-        let card = CardView(frame: CGRectMake(0, 0, Const.Size.CardWidth, Const.Size.CardHeight))
-        card.verb = verbsModel.getVerb(index)
-        return card
-    }
-}
-```
-
-5.Controller (WordsListViewController) sets self as the delegate of the View (CardViewContainer) by setting the property we have created in point 2.
-
-After we create the instance of CardViewContainer, we set self (WordsListViewController) as delegate
-
-```sh
-let cardViewContainer = CardViewContainer(frame: self.view.frame, startingIndex: indexPath.row)
-cardViewContainer.delegat = self
-```
