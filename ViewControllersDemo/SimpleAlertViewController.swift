@@ -37,6 +37,7 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
         static let DefaultButtonHeight: CGFloat = 50.0
         static let DefaultTextFieldHeight: CGFloat = 40.0
         static let DefaultTextFieldBGColor = UIColor.whiteColor()
+        static let DefaultButtonNumberOfLines = 2
         static let Offset: CGFloat = 20
     }
     
@@ -87,6 +88,8 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
          buttonBorderColor: UIColor = Const.DefaultButtonBorderColor,
          buttonHeight: CGFloat = Const.DefaultButtonHeight,
          buttonAlignment: SimpleAlertButtonAlignment = .InRow,
+         buttonMinScaleFactor: CGFloat = Const.MinimumFontScaleFactor,
+         buttonNumberOfLines: Int = Const.DefaultButtonNumberOfLines,
          
          topImg: UIImage? = nil,
          bootomImg: UIImage? = nil,
@@ -137,6 +140,10 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
                 button.setTitle(text, forState: .Normal)
                 button.setBackgroundImage(buttonColor, forState: .Normal)
                 button.setBackgroundImage(buttonHighlightColor, forState: .Highlighted)
+                button.titleLabel?.adjustsFontSizeToFitWidth = true
+                button.titleLabel?.minimumScaleFactor = buttonMinScaleFactor
+                button.titleLabel?.textAlignment = .Center
+                button.titleLabel?.numberOfLines = buttonNumberOfLines
                 buttons.append(button)
             }
         } else {
@@ -150,7 +157,6 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
         if let img = bootomImg {
             bottomImage.image = img
         }
-        
         
         if let txt = textFieldPlaceholder {
             //        textField.borderStyle = UITextBorderStyle.Line
@@ -187,6 +193,8 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
         return CustomPresentationController(presentedViewController: presented, presentingViewController: presenting)
     }
     
+    
+    // to customize transition animation
 //    func animationControllerForPresentedController(presented: UIViewController, presentingController presenting: UIViewController, sourceController source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
 //            return  CustomViewControllerAnimatedTransitioning()
 //    }

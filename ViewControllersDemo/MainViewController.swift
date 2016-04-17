@@ -22,6 +22,7 @@ class MainViewController: UIViewController, UITableViewDelegate, UITableViewData
         static let MainText = "Na dobranoc - dobry wieczór \n miś pluszowy śpiewa Wam. Mówią o mnie Miś Uszatek, bo klapnięte uszko mam. "
         static let Button1Txt = "Ustaw"
         static let Button2Txt = "Anuluj"
+        static let Button3Txt = "Bardzo długi tekst na przycisku, który zostanie zmniejszony."
         static let Img1 = UIImage(named: "img1")
         static let Img2 = UIImage(named: "img2")
         static let disImg1 = UIImage(named: "close1")
@@ -69,13 +70,13 @@ class MainViewController: UIViewController, UITableViewDelegate, UITableViewData
             alert = SimpleAlertViewController(maxWidth: Const.Width, maxHeight: Const.Height, titleText: Const.TitleText, mainText: Const.MainText, buttonsText: [Const.Button1Txt], dismissImg: Const.disImg2)
         
         case 2: //two buttons
-            alert = SimpleAlertViewController(maxWidth: Const.Width, maxHeight: Const.Height, titleText: Const.TitleText, mainText: Const.MainText, buttonsText: [Const.Button1Txt, Const.Button2Txt])
+            alert = SimpleAlertViewController(maxWidth: Const.Width, maxHeight: Const.Height, titleText: Const.TitleText, mainText: Const.MainText, buttonsText: [Const.Button1Txt, Const.Button3Txt])
             
         case 3: //three buttons
             alert = SimpleAlertViewController(maxWidth: Const.Width, maxHeight: Const.Height, titleText: Const.TitleText, mainText: Const.MainText, buttonsText: [Const.Button1Txt, Const.Button2Txt, Const.Button1Txt])
         
         case 4: //three buttons (in Column)
-            alert = SimpleAlertViewController(maxWidth: Const.Width, maxHeight: Const.Height, titleText: Const.TitleText, mainText: Const.MainText, buttonsText: [Const.Button1Txt, Const.Button2Txt, Const.Button1Txt], buttonAlignment: .InColumn)
+            alert = SimpleAlertViewController(maxWidth: Const.Width, maxHeight: Const.Height, titleText: Const.TitleText, mainText: Const.MainText, buttonsText: [Const.Button1Txt, Const.Button2Txt, Const.Button3Txt], buttonAlignment: .InColumn)
 
         case 5: //two buttons & img
             alert = SimpleAlertViewController(maxWidth: Const.Width, maxHeight: Const.Height, titleText: Const.TitleText, mainText: Const.MainText, buttonsText: [Const.Button1Txt, Const.Button2Txt], topImg: Const.Img2)
