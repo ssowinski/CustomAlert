@@ -17,8 +17,8 @@ protocol SimpleAlertDelegate: class {
 
 
 enum SimpleAlertButtonAlignment {
-    case Vertical //z gory na dół
-    case Horizontal
+    case InColumn
+    case InRow
 }
 
 class SimpleAlertViewController: UIViewController, UIViewControllerTransitioningDelegate {
@@ -86,7 +86,7 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
          buttonHighlightColor: UIColor = Const.DefaultButtonHighlightColor,
          buttonBorderColor: UIColor = Const.DefaultButtonBorderColor,
          buttonHeight: CGFloat = Const.DefaultButtonHeight,
-         buttonAlignment: SimpleAlertButtonAlignment = .Horizontal,
+         buttonAlignment: SimpleAlertButtonAlignment = .InRow,
          
          topImg: UIImage? = nil,
          bootomImg: UIImage? = nil,
@@ -94,7 +94,9 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
          textFieldBGColor: UIColor = Const.DefaultTextFieldBGColor,
          textFieldPlaceholder: String? = nil,
          textFieldAlignment: NSTextAlignment  = Const.DefaultTextAlignment,
-         textFieldHeight: CGFloat = Const.DefaultTextFieldHeight
+         textFieldHeight: CGFloat = Const.DefaultTextFieldHeight,
+        
+         dismissImg: UIImage? = nil
         ){
         
         maxContainerWidth = maxWidth
@@ -160,14 +162,16 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
             self.textFieldHeight = 0
         }
         
-        dismissButton.setTitle("X", forState: .Normal)
-        //        dismissButton.setImage(UIImage(named: Const.String.SpeakButtonImg), forState: UIControlState.Normal)
+        if let img = dismissImg {
+            dismissButton.setImage(img, forState: UIControlState.Normal)
+        } else {
+            dismissButton.setTitle("X", forState: .Normal)
+        }
         
         super.init(nibName: nil, bundle: nil)
         
-                self.modalTransitionStyle = .CoverVertical
+        self.modalTransitionStyle = .CoverVertical //default Transition Style
         self.transitioningDelegate = self //UIViewControllerTransitioningDelegate need to create Custom Transition Animation
-
 //        self.modalPresentationStyle = .OverCurrentContext
         self.modalPresentationStyle = .Custom
         
@@ -256,42 +260,95 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
             make.left.equalTo(container)
             make.right.equalTo(container)
             make.bottom.equalTo(container)
-            make.height.equalTo(buttonHeight > 0 ? buttonHeight + 1 : 0)
         }
        
-        for (index, button) in buttons.enumerate() {
-            buttonContainer.addSubview(button)
+        for button in buttons {
             button.addTarget(self, action: #selector(SimpleAlertViewController.buttonAction(_:)), forControlEvents: UIControlEvents.TouchUpInside)
-            
-            button.snp_makeConstraints(closure: { (make) in
-                make.height.equalTo(buttonHeight)
-                make.bottom.equalTo(buttonContainer)
-            })
-            
-            if index > 0 {
-                let buttonSeparator = UIView()
-                buttonContainer.addSubview(buttonSeparator)
-                
-                buttonSeparator.snp_makeConstraints(closure: { (make) in
-                    make.width.equalTo(1)
-                    make.height.equalTo(buttonContainer)
-                    make.left.equalTo(buttons[index-1].snp_right)
-                })
-                
-                button.snp_makeConstraints(closure: { (make) in
-                    make.left.equalTo(buttonSeparator.snp_right)
-                    make.width.equalTo(buttons[index-1].snp_width)
-                })
-            }
         }
         
-        buttons.first?.snp_makeConstraints(closure: { (make) in
-            make.left.equalTo(buttonContainer)
-        })
+        stackView(buttonAlignment, container: buttonContainer, viewsToLayout: buttons, viewHeight: buttonHeight)
+    }
+    
+    
+    private func stackView(alignment: SimpleAlertButtonAlignment, container: UIView, viewsToLayout: [UIView], viewHeight: CGFloat, separatorWidth: CGFloat = 1.0) {
         
-        buttons.last?.snp_makeConstraints(closure: { (make) in
-            make.right.equalTo(buttonContainer)
-        })
+        let topSeparator = UIView()
+        container.addSubview(topSeparator)
+        topSeparator.snp_makeConstraints { (make) in
+            make.top.left.right.equalTo(container)
+            make.height.equalTo(separatorWidth)
+        }
+        
+        for myView in viewsToLayout {
+            container.addSubview(myView)
+            myView.snp_makeConstraints(closure: { (make) in
+                make.height.equalTo(viewHeight)
+            })
+        }
+        
+        switch alignment {
+        case .InColumn:
+            viewsToLayout.first?.snp_makeConstraints(closure: { (make) in
+                make.top.equalTo(topSeparator.snp_bottom)
+            })
+            viewsToLayout.last?.snp_makeConstraints(closure: { (make) in
+                make.bottom.equalTo(container)
+            })
+            
+            for (index, myView) in viewsToLayout.enumerate() {
+                myView.snp_makeConstraints(closure: { (make) in
+                     make.right.left.equalTo(container)
+                })
+                
+                if index > 0 {
+                    let separator = UIView()
+                    container.addSubview(separator)
+                    
+                    separator.snp_makeConstraints(closure: { (make) in
+                        make.height.equalTo(separatorWidth)
+                        make.left.right.equalTo(container)
+                        make.top.equalTo(viewsToLayout[index-1].snp_bottom)
+                    })
+                    
+                    myView.snp_makeConstraints(closure: { (make) in
+                        make.top.equalTo(separator.snp_bottom)
+                    })
+                }
+            }
+            
+            
+        default: //.InRow
+            viewsToLayout.first?.snp_makeConstraints(closure: { (make) in
+                make.left.equalTo(container)
+            })
+            viewsToLayout.last?.snp_makeConstraints(closure: { (make) in
+                make.right.equalTo(container)
+            })
+            
+            for (index, myView) in viewsToLayout.enumerate() {
+                myView.snp_makeConstraints(closure: { (make) in
+                    make.top.equalTo(topSeparator.snp_bottom)
+                    make.bottom.equalTo(container)
+                })
+                
+                if index > 0 {
+                    let separator = UIView()
+                    container.addSubview(separator)
+                    
+                    separator.snp_makeConstraints(closure: { (make) in
+                        make.width.equalTo(separatorWidth)
+                        make.top.bottom.equalTo(container)
+                        make.left.equalTo(viewsToLayout[index-1].snp_right)
+                    })
+                    
+                    myView.snp_makeConstraints(closure: { (make) in
+                        make.left.equalTo(separator.snp_right)
+                        make.width.equalTo(viewsToLayout[index-1].snp_width)
+                    })
+                }
+            }
+            
+        }//switch
     }
     
     
