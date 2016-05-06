@@ -1,5 +1,7 @@
 # Alert View Controller with Custom Presented View Controller Transition
 
+Requires: ios 8, SnapKit
+
 ## Relationships between view controllers
 
 - **Parentage - parent/child** (containment)

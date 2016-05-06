@@ -67,28 +67,28 @@ class MainViewController: UIViewController, UITableViewDelegate, UITableViewData
         
         switch indexPath.row {
         case 1: //one button
-            alert = SimpleAlertViewController(maxWidth: Const.Width, maxHeight: Const.Height, titleText: Const.TitleText, mainText: Const.MainText, buttonsText: [Const.Button1Txt], dismissImg: Const.disImg2)
+            alert = SimpleAlertViewController(titleText: Const.TitleText, mainText: Const.MainText, buttonsText: [Const.Button1Txt], dismissImg: Const.disImg2)
         
         case 2: //two buttons
-            alert = SimpleAlertViewController(maxWidth: Const.Width, maxHeight: Const.Height, titleText: Const.TitleText, mainText: Const.MainText, buttonsText: [Const.Button1Txt, Const.Button3Txt])
+            alert = SimpleAlertViewController(titleText: Const.TitleText, mainText: Const.MainText, buttonsText: [Const.Button1Txt, Const.Button3Txt])
             
         case 3: //three buttons
-            alert = SimpleAlertViewController(maxWidth: Const.Width, maxHeight: Const.Height, titleText: Const.TitleText, mainText: Const.MainText, buttonsText: [Const.Button1Txt, Const.Button2Txt, Const.Button1Txt])
+            alert = SimpleAlertViewController(titleText: Const.TitleText, mainText: Const.MainText, buttonsText: [Const.Button1Txt, Const.Button2Txt, Const.Button1Txt])
         
         case 4: //three buttons (in Column)
-            alert = SimpleAlertViewController(maxWidth: Const.Width, maxHeight: Const.Height, titleText: Const.TitleText, mainText: Const.MainText, buttonsText: [Const.Button1Txt, Const.Button2Txt, Const.Button3Txt], buttonAlignment: .InColumn)
+            alert = SimpleAlertViewController(titleText: Const.TitleText, mainText: Const.MainText, buttonsText: [Const.Button1Txt, Const.Button2Txt, Const.Button3Txt], buttonAlignment: .InColumn)
 
         case 5: //two buttons & img
-            alert = SimpleAlertViewController(maxWidth: Const.Width, maxHeight: Const.Height, titleText: Const.TitleText, mainText: Const.MainText, buttonsText: [Const.Button1Txt, Const.Button2Txt], topImg: Const.Img2)
+            alert = SimpleAlertViewController(titleText: Const.TitleText, mainText: Const.MainText, buttonsText: [Const.Button1Txt, Const.Button2Txt], topImg: Const.Img2)
             
         case 6: //two buttons & two imgs
-            alert = SimpleAlertViewController(maxWidth: Const.Width, maxHeight: Const.Height, titleText: Const.TitleText, mainText: Const.MainText, buttonsText: [Const.Button1Txt, Const.Button2Txt], topImg: Const.Img1, bootomImg: Const.Img2)
+            alert = SimpleAlertViewController(titleText: Const.TitleText, mainText: Const.MainText, buttonsText: [Const.Button1Txt, Const.Button2Txt], topImg: Const.Img1, bootomImg: Const.Img2)
             
         case 7: //two buttons & two imgs & textField
-            alert = SimpleAlertViewController(maxWidth: Const.Width, maxHeight: Const.Height, titleText: Const.TitleText, mainText: Const.MainText, buttonsText: [Const.Button1Txt, Const.Button2Txt], topImg: Const.Img1, bootomImg: Const.Img2, textFieldPlaceholder: Const.TextFieldPlaceholder)
+            alert = SimpleAlertViewController(titleText: Const.TitleText, mainText: Const.MainText, buttonsText: [Const.Button1Txt, Const.Button2Txt], topImg: Const.Img1, bootomImg: Const.Img2, textFieldPlaceholder: Const.TextFieldPlaceholder)
             
         default: //only title and text
-            alert = SimpleAlertViewController(maxWidth: Const.Width, maxHeight: Const.Height, titleText: Const.TitleText, mainText: Const.MainText, dismissImg: Const.disImg1)
+            alert = SimpleAlertViewController(titleText: Const.TitleText, mainText: Const.MainText, dismissImg: Const.disImg1)
         }
         
         if let alert = alert {

@@ -21,10 +21,12 @@ enum SimpleAlertButtonAlignment {
     case InRow
 }
 
-class SimpleAlertViewController: UIViewController, UIViewControllerTransitioningDelegate {
+class SimpleAlertViewController: UIViewController, UIViewControllerTransitioningDelegate, UITextFieldDelegate {
     
     // MARK: - Const
     private struct Const {
+        static let DefaultMaxWidthFactor: CGFloat = 0.8
+        static let DefaultMaxHeightFactor: CGFloat = 0.8
         static let DefaultContainerColor = UIColor(rgb: 0x238888)
         static let DefaultButtonColor = UIColor(rgb: 0x6dc8c9)
         static let DefaultButtonHighlightColor = UIColor(rgb: 0x5eb1b3)
@@ -41,11 +43,13 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
         static let Offset: CGFloat = 20
     }
     
+    typealias SimpleAlertAction = (buttonTag: Int, textFromTextField: String?) -> Void
+    
     // MARK: - Public properties
-    weak var delegate : SimpleAlertDelegate?
-    var closeAction:(()->Void)! //or action //TO DO
+    weak var delegate : SimpleAlertDelegate? //we can use delegate or action SimpleAlertAction
     
     // MARK: - Private properties
+    private var action: SimpleAlertAction?
     private let dismissButton: UIButton = UIButton()
     private let container: UIView = UIView()
     private let titleLabel: UILabel = UILabel()
@@ -56,18 +60,21 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
     private let bottomImage: UIImageView = UIImageView()
     private let textField: UITextField = UITextField()
     
-    private let maxContainerWidth: CGFloat
-    private let maxContainerHeight: CGFloat
+    private let maxWidthFactor: CGFloat
+    private let maxHeightFactor: CGFloat
     
     private let buttonAlignment: SimpleAlertButtonAlignment
     private let buttonHeight: CGFloat
     
     private let textFieldHeight: CGFloat
     
+    private var textFromTextField: String? {
+        return textField.text
+    }
     
     // MARK: - Init
-    init(maxWidth: CGFloat,
-         maxHeight: CGFloat,
+    init(maxWidthFactor: CGFloat = Const.DefaultMaxWidthFactor,
+         maxHeightFactor: CGFloat = Const.DefaultMaxHeightFactor,
          containerColor: UIColor = Const.DefaultContainerColor,
          
          titleText: String,
@@ -98,12 +105,13 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
          textFieldPlaceholder: String? = nil,
          textFieldAlignment: NSTextAlignment  = Const.DefaultTextAlignment,
          textFieldHeight: CGFloat = Const.DefaultTextFieldHeight,
-        
-         dismissImg: UIImage? = nil
+         
+         dismissImg: UIImage? = nil,
+         buttonAction: SimpleAlertAction? = nil
         ){
         
-        maxContainerWidth = maxWidth
-        maxContainerHeight = maxHeight
+        self.maxWidthFactor = maxWidthFactor
+        self.maxHeightFactor = maxHeightFactor
         container.backgroundColor = containerColor
         
         titleLabel.text = titleText
@@ -178,15 +186,16 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
         
         self.modalTransitionStyle = .CoverVertical //default Transition Style
         self.transitioningDelegate = self //UIViewControllerTransitioningDelegate need to create Custom Transition Animation
-//        self.modalPresentationStyle = .OverCurrentContext
+        //        self.modalPresentationStyle = .OverCurrentContext
         self.modalPresentationStyle = .Custom
         
+        textField.delegate = self
     }
     
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
+    
     // MARK: - UIViewControllerTransitioningDelegate Implementation
     
     func presentationControllerForPresentedViewController(presented: UIViewController, presentingViewController presenting: UIViewController, sourceViewController source: UIViewController) -> UIPresentationController? {
@@ -195,21 +204,73 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
     
     
     // to customize transition animation
-//    func animationControllerForPresentedController(presented: UIViewController, presentingController presenting: UIViewController, sourceController source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-//            return  CustomViewControllerAnimatedTransitioning()
-//    }
-    
-//    func animationControllerForDismissedController(dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-//        return self
-//    }
+    //    func animationControllerForPresentedController(presented: UIViewController, presentingController presenting: UIViewController, sourceController source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+    //            return  CustomViewControllerAnimatedTransitioning()
+    //    }
+    // to customize dismisse animation
+    //    func animationControllerForDismissedController(dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+    //        return self
+    //    }
     
     
     // MARK: - ViewController Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         layoutUI()
-        // Do any additional setup after loading the view.
+        addButtonAction()
+        addKeyboardNotificationObservers()
     }
+    
+    override func viewWillDisappear(animated: Bool) {
+        removeKeyboardNotificationObservers()
+    }
+    
+    private func addKeyboardNotificationObservers() {
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(SimpleAlertViewController.keyboardWillShow(_:)), name:UIKeyboardWillShowNotification, object: nil);
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: #selector(SimpleAlertViewController.keyboardWillHide(_:)), name:UIKeyboardWillHideNotification, object: nil);
+    }
+    
+    private func removeKeyboardNotificationObservers() {
+        NSNotificationCenter.defaultCenter().removeObserver(UIKeyboardWillShowNotification)
+        NSNotificationCenter.defaultCenter().removeObserver(UIKeyboardWillHideNotification)
+    }
+    
+    func keyboardWillShow(notification: NSNotification) {
+        guard let offset = calculateOffset(notification) else { return }
+        
+        if  offset < 0  {
+            UIView.animateWithDuration(0.3, animations: { () -> Void in
+                self.view.frame.origin.y += offset
+            })
+        }
+    }
+    
+    func keyboardWillHide(notification: NSNotification) {
+        guard let offset = calculateOffset(notification) else { return }
+        
+        if  offset < 0  {
+            UIView.animateWithDuration(0.3, animations: { () -> Void in
+                self.view.frame.origin.y -= offset
+            })
+        }
+        
+    }
+    
+    private func calculateOffset(notification: NSNotification) -> CGFloat? {
+        guard let userInfo = notification.userInfo else { return nil}
+        guard let keyboardHeight = userInfo[UIKeyboardFrameBeginUserInfoKey]?.CGRectValue.size.height else { return nil}
+        
+        let halfView = self.view.frame.height / 2
+        let halfContainer = container.frame.height / 2
+        return halfView - halfContainer - keyboardHeight - Const.Offset
+    }
+    
+    private func addButtonAction() {
+        for button in buttons {
+            button.addTarget(self, action: #selector(SimpleAlertViewController.buttonAction(_:)), forControlEvents: UIControlEvents.TouchUpInside)
+        }
+    }
+    
     
     private func layoutUI() {
         dismissButton.addTarget(self, action: #selector(SimpleAlertViewController.dismissAction(_:)), forControlEvents: UIControlEvents.TouchUpInside)
@@ -224,10 +285,10 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
         container.addSubview(buttonContainer)
         
         container.snp_makeConstraints { (make) in
-//            make.edges.equalTo(view)
+            //            make.edges.equalTo(view)
             make.center.equalTo(view)
-            make.width.lessThanOrEqualTo(maxContainerWidth < view.bounds.width ? maxContainerWidth : view.bounds.width)
-            make.height.lessThanOrEqualTo(maxContainerHeight < view.bounds.height ? maxContainerHeight : view.bounds.height)
+            make.width.lessThanOrEqualTo(view.bounds.width * maxWidthFactor)
+            make.height.lessThanOrEqualTo(view.bounds.height * maxHeightFactor)
         }
         
         dismissButton.snp_makeConstraints { (make) in
@@ -269,7 +330,7 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
             make.right.equalTo(container)
             make.bottom.equalTo(container)
         }
-       
+        
         for button in buttons {
             button.addTarget(self, action: #selector(SimpleAlertViewController.buttonAction(_:)), forControlEvents: UIControlEvents.TouchUpInside)
         }
@@ -305,7 +366,7 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
             
             for (index, myView) in viewsToLayout.enumerate() {
                 myView.snp_makeConstraints(closure: { (make) in
-                     make.right.left.equalTo(container)
+                    make.right.left.equalTo(container)
                 })
                 
                 if index > 0 {
@@ -366,18 +427,18 @@ class SimpleAlertViewController: UIViewController, UIViewControllerTransitioning
     }
     
     func buttonAction(sender: UIButton) {
-        delegate?.alertButtonAction(nil, sender: sender)
+        if let action = action {
+            action(buttonTag: sender.tag, textFromTextField: textFromTextField)
+        } else {
+            delegate?.alertButtonAction(textFromTextField, sender: sender)
+        }
     }
     
-    /*
-     // MARK: - Navigation
-     
-     // In a storyboard-based application, you will often want to do a little preparation before navigation
-     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-     // Get the new view controller using segue.destinationViewController.
-     // Pass the selected object to the new view controller.
-     }
-     */
+    // MARK: - UITextFieldDelegate
+    func textFieldShouldReturn(textField: UITextField) -> Bool {
+        textField.resignFirstResponder();
+        return true;
+    }
     
 }
 
@@ -422,10 +483,10 @@ class CustomViewControllerAnimatedTransitioning : NSObject, UIViewControllerAnim
 // MARK: - UIPresentationController Implementation
 class CustomPresentationController : UIPresentationController {
     
-//    override func frameOfPresentedViewInContainerView() -> CGRect {
-//        return super.frameOfPresentedViewInContainerView()
-//            .insetBy(dx: 10, dy: 10)
-//    }
+    //    override func frameOfPresentedViewInContainerView() -> CGRect {
+    //        return super.frameOfPresentedViewInContainerView()
+    //            .insetBy(dx: 10, dy: 10)
+    //    }
     
     override func presentationTransitionWillBegin() {
         let con = self.containerView!
